@@ -1,0 +1,38 @@
+version: "3.3"
+services:
+  kafka:
+    image: 'bitnami/kafka:latest'
+    ports:
+      - '9092:9092'
+    environment:
+      ADVERTISED_HOST: kafka
+      KAFKA_BROKER_ID: 1
+      LOG_RETENTION_HOURS: 1
+      AUTO_CREATE_TOPICS: "false"
+      KAFKA_CREATE_TOPICS: divolte:1:2
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,DIVOLTE:PLAINTEXT
+      INTER_BROKER: DIVOLTE
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://127.0.0.1:9092,DIVOLTE://kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,DIVOLTE://0.0.0.0:9093
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    depends_on:
+      - zookeeper
+  zookeeper:
+    image: 'bitnami/zookeeper:latest'
+    ports:
+      - '2181:2181'  
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+      - HOSTNAME=zookeeper-0
+    
+  # Divolte container
+  docker-divolte:
+    build: .
+    environment:
+      DIVOLTE_KAFKA_BROKER_LIST: kafka:9093
+      DIVOLTE_KAFKA_TOPIC: divolte
+    ports:
+      - 8290:8290
+    depends_on:
+      - kafka
